@@ -1,5 +1,6 @@
 ﻿Module ModMain
     Public debugMode As Boolean = False
+    Public exitScript As Boolean = False
     Public scripts As New List(Of IO.FileInfo)
     Public strings As New Dictionary(Of String, String)
     Public integers As New Dictionary(Of String, Integer)
@@ -88,6 +89,7 @@
     Function InterpretScript(ByVal script As IO.FileInfo) As ScriptEventInfo
         Dim lineNo As Integer = 0
         Try
+            exitScript = False
             For Each line In IO.File.ReadAllLines(script.ToString)
                 lineNo += 1
                 If lineNo = 1 Then
@@ -107,6 +109,9 @@
                             ShowError(.Error, lineNo)
                         End If
                     End With
+                End If
+                If exitScript = True Then
+                    Exit For
                 End If
             Next
             Return New ScriptEventInfo With {.Sucess = ScriptEventInfo.ScriptEventState.Success}
@@ -197,6 +202,7 @@
             End Select
             Console.WriteLine()
         End While
+        Console.WriteLine()
         Return answer
     End Function
 
