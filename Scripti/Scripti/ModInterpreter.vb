@@ -94,6 +94,28 @@
                 Else
                     Throw New Exception("Can't delete file. File doesn't exist: " & lineRegEx(0).Result("$3"))
                 End If
+            Case "movedirectory"
+                If IO.Directory.Exists(lineRegEx(0).Result("$4")) = True Then 'If file already exist then ...
+                    If Boolean.TryParse(lineRegEx(0).Result("$5"), New Boolean) = True Then '... check if the script has an advice to overwrite it.
+                        If Boolean.Parse(lineRegEx(0).Result("$5")) = True Then 'If the script says to overwrite then override (in other case nothing happens)
+                            IO.Directory.Delete(lineRegEx(0).Result("$4"))
+                            IO.Directory.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
+                        End If
+                    Else 'If the script says nothing then ...
+                        If AskYesNo("Overwrite """ & lineRegEx(0).Result("$4") & """ with """ & lineRegEx(0).Result("$3") & """?", YesNoQuestionDefault.No) = True Then '... ask the user.
+                            IO.Directory.Delete(lineRegEx(0).Result("$4"))
+                            IO.Directory.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
+                        End If
+                    End If
+                Else
+                    IO.Directory.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
+                End If
+            Case "deletedirectory"
+                If IO.Directory.Exists(lineRegEx(0).Result("$3")) = True Then
+                    IO.Directory.Delete(lineRegEx(0).Result("$3"))
+                Else
+                    Throw New Exception("Can't delete file. File doesn't exist: " & lineRegEx(0).Result("$3"))
+                End If
             Case Else
                 Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
         End Select
