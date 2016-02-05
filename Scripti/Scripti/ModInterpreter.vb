@@ -112,7 +112,7 @@
                 End If
             Case "deletedirectory"
                 If IO.Directory.Exists(lineRegEx(0).Result("$3")) = True Then
-                    IO.Directory.Delete(lineRegEx(0).Result("$3"))
+                    IO.Directory.Delete(lineRegEx(0).Result("$3"), True) 'Deletes all files
                 Else
                     Throw New Exception("Can't delete file. File doesn't exist: " & lineRegEx(0).Result("$3"))
                 End If
