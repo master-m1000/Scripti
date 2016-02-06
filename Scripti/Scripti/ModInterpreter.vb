@@ -119,7 +119,7 @@
                 If IO.Directory.Exists(lineRegEx(0).Result("$3")) = True Then
                     IO.Directory.Delete(lineRegEx(0).Result("$3"), True) 'Deletes all files
                 Else
-                    Throw New Exception("Can't delete file. File doesn't exist: " & lineRegEx(0).Result("$3"))
+                    Throw New Exception("Can't delete directory. Directory doesn't exist: " & lineRegEx(0).Result("$3"))
                 End If
             Case Else
                 Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
