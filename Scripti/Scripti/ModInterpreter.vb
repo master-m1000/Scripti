@@ -121,6 +121,20 @@
                 Else
                     IO.Directory.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
                 End If
+            Case "run"
+                Dim newProcess As New Process
+                newProcess.StartInfo.FileName = lineRegEx(0).Result("$3")
+                newProcess.StartInfo.Arguments = lineRegEx(0).Result("$4")
+                Dim runAs As Boolean 'Run as administrator (Windows Vista+/UAC)
+                If Boolean.TryParse(lineRegEx(0).Result("$6"), runAs) = True And runAs = True Then
+                    newProcess.StartInfo.Verb = "runas"
+                End If
+                newProcess.Start()
+                Dim waitForFinish As Boolean
+                If Boolean.TryParse(lineRegEx(0).Result("$5"), waitForFinish) = True And waitForFinish = True Then
+                    While newProcess.HasExited = False 'Wait for exit
+                    End While
+                End If
             Case Else
                 Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
         End Select
