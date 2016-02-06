@@ -93,6 +93,12 @@
                 Else
                     IO.File.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
                 End If
+            Case "deletedirectory"
+                If IO.Directory.Exists(lineRegEx(0).Result("$3")) = True Then
+                    IO.Directory.Delete(lineRegEx(0).Result("$3"), True) 'Deletes all files
+                Else
+                    Throw New Exception("Can't delete directory. Directory doesn't exist: " & lineRegEx(0).Result("$3"))
+                End If
             Case "deletefile"
                 If IO.File.Exists(lineRegEx(0).Result("$3")) = True Then
                     IO.File.Delete(lineRegEx(0).Result("$3"))
@@ -114,12 +120,6 @@
                     End If
                 Else
                     IO.Directory.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
-                End If
-            Case "deletedirectory"
-                If IO.Directory.Exists(lineRegEx(0).Result("$3")) = True Then
-                    IO.Directory.Delete(lineRegEx(0).Result("$3"), True) 'Deletes all files
-                Else
-                    Throw New Exception("Can't delete directory. Directory doesn't exist: " & lineRegEx(0).Result("$3"))
                 End If
             Case Else
                 Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
