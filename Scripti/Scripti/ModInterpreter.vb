@@ -8,6 +8,9 @@
     Function InterpretLine(ByVal line As String) As ScriptEventInfo
         Try
             If line.StartsWith("'") = False And String.IsNullOrWhiteSpace(line) = False Then 'Ignore comments
+                If line.Contains("%b") Or line.Contains("%i") Or line.Contains("%s") Then 'Only check lines if they contains the indicator for variables
+                    line = ReplaceVariables(line)
+                End If
                 Dim pattern As String = "(\w+)\.(\w+):([^\n;]*);?([^\n;]*);?([^\n;]*);?([^\n;]*);?([^\n;]*)"
                 Dim regexMC As Text.RegularExpressions.MatchCollection = Text.RegularExpressions.Regex.Matches(line, pattern, Text.RegularExpressions.RegexOptions.IgnoreCase)
                 If regexMC.Count = 0 Then
@@ -18,6 +21,8 @@
                         InterpretLineGroupMe(regexMC)
                     Case "io"
                         InterpretLineGroupIo(regexMC)
+                    Case "var"
+                        InterpretLineGroupVar(regexMC)
                     Case Else
                         Throw New Exception(regexMC(0).Result("Uknown group: $1"))
                 End Select
@@ -115,6 +120,61 @@
                     IO.Directory.Delete(lineRegEx(0).Result("$3"), True) 'Deletes all files
                 Else
                     Throw New Exception("Can't delete file. File doesn't exist: " & lineRegEx(0).Result("$3"))
+                End If
+            Case Else
+                Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
+        End Select
+    End Sub
+
+    ''' <summary>
+    ''' Interprets a line in the group "var"
+    ''' </summary>
+    ''' <param name="lineRegEx">Line to interpret as Regex MatchCollection</param>
+    Sub InterpretLineGroupVar(ByVal lineRegEx As Text.RegularExpressions.MatchCollection)
+        Select Case lineRegEx(0).Result("$2")
+            Case "boolean"
+                Dim parsed As Boolean = False
+                If booleans.ContainsKey(lineRegEx(0).Result("$3")) = False Then
+                    If Boolean.TryParse(lineRegEx(0).Result("$4"), parsed) = True Then
+                        booleans.Add(lineRegEx(0).Result("$3"), parsed)
+                    Else
+                        Throw New Exception(lineRegEx(0).Result("The new value of $3 is not a boolean: $4"))
+                    End If
+                Else
+                    If booleans.ContainsKey(lineRegEx(0).Result("$3")) Then
+                        If Boolean.TryParse(lineRegEx(0).Result("$4"), parsed) = True Then
+                            booleans(lineRegEx(0).Result("$3")) = parsed
+                        Else
+                            Throw New Exception(lineRegEx(0).Result("The new value of $3 is not a boolean: $4"))
+                        End If
+                    Else
+                        Throw New Exception(lineRegEx(0).Result("Variable $3 is already used."))
+                    End If
+                End If
+            Case "integer"
+                Dim parsed As Integer = 0
+                If integers.ContainsKey(lineRegEx(0).Result("$3")) = False Then
+                    If Integer.TryParse(lineRegEx(0).Result("$4"), parsed) = True Then
+                        integers.Add(lineRegEx(0).Result("$3"), parsed)
+                    Else
+                        Throw New Exception(lineRegEx(0).Result("The new value of $3 is not an integer: $4"))
+                    End If
+                Else
+                    If integers.ContainsKey(lineRegEx(0).Result("$3")) Then
+                        If Integer.TryParse(lineRegEx(0).Result("$4"), parsed) = True Then
+                            integers(lineRegEx(0).Result("$3")) = parsed
+                        Else
+                            Throw New Exception(lineRegEx(0).Result("The new value of $3 is not an integer: $4"))
+                        End If
+                    Else
+                        Throw New Exception(lineRegEx(0).Result("Variable $3 is already used."))
+                    End If
+                End If
+            Case "string"
+                If strings.ContainsKey(lineRegEx(0).Result("$3")) = False Then
+                    strings.Add(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
+                Else
+                    strings(lineRegEx(0).Result("$3")) = lineRegEx(0).Result("$4")
                 End If
             Case Else
                 Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))

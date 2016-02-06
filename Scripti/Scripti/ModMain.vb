@@ -240,6 +240,48 @@
         End Try
     End Function
 
+    ''' <summary>
+    ''' Replaces variables with value
+    ''' </summary>
+    ''' <param name="line">Line to edit</param>
+    ''' <returns>The line with replaced variables.</returns>
+    Function ReplaceVariables(ByRef line As String) As String
+        Dim xLine As String = line
+        While xLine.Length > 0
+            If xLine(0) = ":" Then
+                xLine = xLine.Remove(0, 1)
+                Exit While
+            Else
+                xLine = xLine.Remove(0, 1)
+            End If
+        End While
+        Dim pattern2 As String = "([^\n%]*)%([bis])(.+)%([^\n%]*)"
+        Dim regexMC2 As Text.RegularExpressions.MatchCollection = Text.RegularExpressions.Regex.Matches(xLine, pattern2, Text.RegularExpressions.RegexOptions.IgnoreCase)
+        For Each match As Text.RegularExpressions.Match In regexMC2
+            Select Case match.Result("$2")
+                Case "b"
+                    If booleans.Keys.Contains(match.Result("$3")) = True Then
+                        line = line.Replace("%b" & match.Result("$3") & "%", booleans(match.Result("$3")).ToString)
+                    Else
+                        Throw New Exception("The boolean """ & match.Result("$3") & """ does not exist.")
+                    End If
+                Case "i"
+                    If integers.Keys.Contains(match.Result("$3")) = True Then
+                        line = line.Replace("%i" & match.Result("$3") & "%", integers(match.Result("$3")).ToString)
+                    Else
+                        Throw New Exception("The integer """ & match.Result("$3") & """ does not exist.")
+                    End If
+                Case "s"
+                    If strings.Keys.Contains(match.Result("$3")) = True Then
+                        line = line.Replace("%s" & match.Result("$3") & "%", strings(match.Result("$3")))
+                    Else
+                        Throw New Exception("The string """ & match.Result("$3") & """ does not exist.")
+                    End If
+            End Select
+        Next
+        Return line
+    End Function
+
     'Templates
     '
     '''' <summary>
