@@ -2,9 +2,9 @@
     Public debugMode As Boolean = False
     Public exitScript As Boolean = False
     Public scripts As New List(Of IO.FileInfo)
-    Public strings As New Dictionary(Of String, String)
-    Public integers As New Dictionary(Of String, Integer)
     Public booleans As New Dictionary(Of String, Boolean)
+    Public integers As New Dictionary(Of String, Integer)
+    Public strings As New Dictionary(Of String, String)
     Private ignoreVersion As Boolean = False
     Private wait As Boolean = False
 
@@ -79,8 +79,6 @@
         End Try
     End Function
 
-
-
     ''' <summary>
     ''' Interprets a script
     ''' </summary>
@@ -104,7 +102,7 @@
                         Throw New Exception("Not a valid script file.")
                     End If
                 Else
-                    With InterpretLine(line)
+                    With InterpretLine(line, lineNo)
                         If .Sucess = ScriptEventInfo.ScriptEventState.Error Then
                             ShowError(.Error, lineNo)
                         End If
@@ -166,7 +164,7 @@
     ''' </summary>
     ''' <param name="question">A Yes/No-Question</param>
     ''' <param name="defaultAnswer">Default Answer if enter pressed</param>
-    ''' <returns></returns>
+    ''' <returns>Boolean</returns>
     Function AskYesNo(ByVal question As String, Optional ByVal defaultAnswer As YesNoQuestionDefault = YesNoQuestionDefault.Nothing) As Boolean
         Dim answer As Boolean
         While True
@@ -203,6 +201,42 @@
             Console.WriteLine()
         End While
         Console.WriteLine()
+        Return answer
+    End Function
+
+    ''' <summary>
+    ''' Asks for an Integer
+    ''' </summary>
+    ''' <param name="question">Text before input</param>
+    ''' <returns>Integer</returns>
+    Function AskInteger(ByVal question As String) As Integer
+        Dim answer As Integer
+        While True
+            Console.Write(question & " ")
+            If Integer.TryParse(Console.ReadLine(), answer) = True Then
+                Exit While
+            End If
+        End While
+        Return answer
+    End Function
+
+    ''' <summary>
+    ''' Asks for a String
+    ''' </summary>
+    ''' <param name="question">Text before input</param>
+    ''' <param name="acceptEmpty">If empty Strings should be accepted</param>
+    ''' <returns>String</returns>
+    Function AskString(ByVal question As String, ByVal acceptEmpty As Boolean) As String
+        Dim answer As String = String.Empty
+        While True
+            Console.Write(question & " ")
+            answer = Console.ReadLine()
+            If acceptEmpty = True Then
+                Exit While
+            ElseIf String.IsNullOrEmpty(answer) = False Then
+                Exit While
+            End If
+        End While
         Return answer
     End Function
 
@@ -255,7 +289,7 @@
                 xLine = xLine.Remove(0, 1)
             End If
         End While
-        Dim pattern2 As String = "([^\n%]*)%([bis])(.+)%([^\n%]*)"
+        Dim pattern2 As String = "([^\n%]*)%([bis])([^%]+)%([^\n%]*)"
         Dim regexMC2 As Text.RegularExpressions.MatchCollection = Text.RegularExpressions.Regex.Matches(xLine, pattern2, Text.RegularExpressions.RegexOptions.IgnoreCase)
         For Each match As Text.RegularExpressions.Match In regexMC2
             Select Case match.Result("$2")
