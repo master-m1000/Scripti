@@ -86,6 +86,14 @@
             If consoleMode = True Then
                 Console.WriteLine("CONSOLE MODE")
                 scripts.Clear()
+            ElseIf consoleMode = False And scripts.Count = 0 Then
+                Console.Write("Open a script file: ")
+                With AddScript(Console.ReadLine)
+                    If .Sucess = ScriptEventInfo.ScriptEventState.Error Then
+                        ShowError(.Error, -1)
+                        wait = True
+                    End If
+                End With
             Else
                 Console.WriteLine("List of script files:")
                 For Each script In scripts
