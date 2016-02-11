@@ -117,6 +117,42 @@
     ''' <param name="lineRegEx">Line to interpret as Regex MatchCollection</param>
     Sub InterpretLineGroupIo(ByVal lineRegEx As Text.RegularExpressions.MatchCollection)
         Select Case lineRegEx(0).Result("$2")
+            Case "copydirectory"
+                If IO.Directory.Exists(lineRegEx(0).Result("$4")) = True Then 'If directory already exist then ...
+                    Dim dir As New IO.DirectoryInfo(lineRegEx(0).Result("$3"))
+                    IO.Directory.CreateDirectory(lineRegEx(0).Result("$4"))
+                    For Each subdir In dir.GetDirectories("*", IO.SearchOption.AllDirectories)
+                        IO.Directory.CreateDirectory(My.Computer.FileSystem.CombinePath(lineRegEx(0).Result("$4"), subdir.FullName.Replace(dir.FullName, "")))
+                    Next
+                    For Each file In dir.GetFiles("*", IO.SearchOption.AllDirectories)
+                        If IO.File.Exists(My.Computer.FileSystem.CombinePath(lineRegEx(0).Result("$4"), file.FullName.Replace(dir.FullName & "\", ""))) = True Then 'if file already exist
+                            If Boolean.TryParse(lineRegEx(0).Result("$5"), New Boolean) = True Then '... check if the script has an advice to overwrite it.
+                                If Boolean.Parse(lineRegEx(0).Result("$5")) = True Then 'If the script says to overwrite then override (in other case nothing happens)
+                                    IO.File.Copy(file.FullName, My.Computer.FileSystem.CombinePath(lineRegEx(0).Result("$4"), file.FullName.Replace(dir.FullName & "\", "")), True)
+                                End If
+                            Else 'If the script says nothing then ...
+                                If AskYesNo("Overwrite """ & My.Computer.FileSystem.CombinePath(lineRegEx(0).Result("$4"), file.FullName.Replace(dir.FullName & "\", "")) & """ with """ & file.FullName & """?", YesNoQuestionDefault.No) = True Then '... ask the user.
+                                    IO.File.Copy(file.FullName, My.Computer.FileSystem.CombinePath(lineRegEx(0).Result("$4"), file.FullName.Replace(dir.FullName & "\", "")), True)
+                                End If
+                            End If
+                        Else
+                            IO.File.Copy(file.FullName, My.Computer.FileSystem.CombinePath(lineRegEx(0).Result("$4"), file.FullName.Replace(dir.FullName & "\", "")))
+                        End If
+
+                        If IO.File.Exists(My.Computer.FileSystem.CombinePath(lineRegEx(0).Result("$4"), file.FullName.Replace(dir.FullName & "\", ""))) Then
+                            Console.WriteLine(My.Computer.FileSystem.CombinePath(lineRegEx(0).Result("$4"), file.FullName.Replace(dir.FullName & "\", "")))
+                        End If
+                    Next
+                Else
+                    Dim dir As New IO.DirectoryInfo(lineRegEx(0).Result("$3"))
+                    IO.Directory.CreateDirectory(lineRegEx(0).Result("$4"))
+                    For Each subdir In dir.GetDirectories("*", IO.SearchOption.AllDirectories)
+                        IO.Directory.CreateDirectory(My.Computer.FileSystem.CombinePath(lineRegEx(0).Result("$4"), subdir.FullName.Replace(dir.FullName, "")))
+                    Next
+                    For Each file In dir.GetFiles("*", IO.SearchOption.AllDirectories)
+                        IO.File.Copy(file.FullName, My.Computer.FileSystem.CombinePath(lineRegEx(0).Result("$4"), file.FullName.Replace(dir.FullName, "")))
+                    Next
+                End If
             Case "copyfile"
                 If IO.File.Exists(lineRegEx(0).Result("$4")) = True Then 'If file already exist then ...
                     If Boolean.TryParse(lineRegEx(0).Result("$5"), New Boolean) = True Then '... check if the script has an advice to overwrite it.
@@ -130,22 +166,6 @@
                     End If
                 Else
                     IO.File.Copy(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
-                End If
-            Case "movefile"
-                If IO.File.Exists(lineRegEx(0).Result("$4")) = True Then 'If file already exist then ...
-                    If Boolean.TryParse(lineRegEx(0).Result("$5"), New Boolean) = True Then '... check if the script has an advice to overwrite it.
-                        If Boolean.Parse(lineRegEx(0).Result("$5")) = True Then 'If the script says to overwrite then override (in other case nothing happens)
-                            IO.File.Delete(lineRegEx(0).Result("$4"))
-                            IO.File.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
-                        End If
-                    Else 'If the script says nothing then ...
-                        If AskYesNo("Overwrite """ & lineRegEx(0).Result("$4") & """ with """ & lineRegEx(0).Result("$3") & """?", YesNoQuestionDefault.No) = True Then '... ask the user.
-                            IO.File.Delete(lineRegEx(0).Result("$4"))
-                            IO.File.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
-                        End If
-                    End If
-                Else
-                    IO.File.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
                 End If
             Case "deletedirectory"
                 If IO.Directory.Exists(lineRegEx(0).Result("$3")) = True Then
@@ -174,6 +194,22 @@
                     End If
                 Else
                     IO.Directory.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
+                End If
+            Case "movefile"
+                If IO.File.Exists(lineRegEx(0).Result("$4")) = True Then 'If file already exist then ...
+                    If Boolean.TryParse(lineRegEx(0).Result("$5"), New Boolean) = True Then '... check if the script has an advice to overwrite it.
+                        If Boolean.Parse(lineRegEx(0).Result("$5")) = True Then 'If the script says to overwrite then override (in other case nothing happens)
+                            IO.File.Delete(lineRegEx(0).Result("$4"))
+                            IO.File.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
+                        End If
+                    Else 'If the script says nothing then ...
+                        If AskYesNo("Overwrite """ & lineRegEx(0).Result("$4") & """ with """ & lineRegEx(0).Result("$3") & """?", YesNoQuestionDefault.No) = True Then '... ask the user.
+                            IO.File.Delete(lineRegEx(0).Result("$4"))
+                            IO.File.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
+                        End If
+                    End If
+                Else
+                    IO.File.Move(lineRegEx(0).Result("$3"), lineRegEx(0).Result("$4"))
                 End If
             Case "run"
                 Dim newProcess As New Process
