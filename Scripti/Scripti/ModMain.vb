@@ -1,4 +1,5 @@
 ﻿Module ModMain
+    Public consoleMode As Boolean = False
     Public debugMode As Boolean = False
     Public exitScript As Boolean = False
     Public scripts As New List(Of IO.FileInfo)
@@ -20,6 +21,19 @@
                 ShowError(.Error)
             End If
         End With
+
+        If consoleMode = True Then
+            HLine()
+            While exitScript = False
+                Console.WriteLine()
+                Console.Write("> ")
+                With InterpretLine(Console.ReadLine, -1)
+                    If .Sucess = ScriptEventInfo.ScriptEventState.Error Then
+                        ShowError(.Error, -1)
+                    End If
+                End With
+            End While
+        End If
 
         For Each script In scripts
             HLine()
@@ -53,6 +67,8 @@
             For Each argument In Environment.GetCommandLineArgs
                 Select Case argument
                     Case Environment.GetCommandLineArgs(0)
+                    Case "console"
+                        consoleMode = True
                     Case "debug"
                         debugMode = (argument = "debug")
                         Console.WriteLine("DEBUG MODE")
@@ -67,10 +83,15 @@
                         End With
                 End Select
             Next
-            Console.WriteLine("List of script files:")
-            For Each script In scripts
-                Console.WriteLine(" " & script.ToString)
-            Next
+            If consoleMode = True Then
+                Console.WriteLine("CONSOLE MODE")
+                scripts.Clear()
+            Else
+                Console.WriteLine("List of script files:")
+                For Each script In scripts
+                    Console.WriteLine(" " & script.ToString)
+                Next
+            End If
             Console.WriteLine()
 
             Return New ScriptEventInfo With {.Sucess = ScriptEventInfo.ScriptEventState.Success}
