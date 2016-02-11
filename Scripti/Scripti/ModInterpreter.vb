@@ -41,75 +41,29 @@
                     Next
                 End If
                 If line.Contains("%b") Or line.Contains("%i") Or line.Contains("%s") Then 'Only check lines if they contains the indicator for variables
-                        line = ReplaceVariables(line)
-                    End If
-                    Dim pattern As String = "(\w+)\.(\w+):([^\n;]*);?([^\n;]*);?([^\n;]*);?([^\n;]*);?([^\n;]*)"
-                    Dim regexMC As Text.RegularExpressions.MatchCollection = Text.RegularExpressions.Regex.Matches(line, pattern, Text.RegularExpressions.RegexOptions.IgnoreCase)
-                    If regexMC.Count = 0 Then
-                        Throw New Exception("Bad line")
-                    End If
-                    Select Case regexMC(0).Result("$1")
-                        Case "me"
-                            InterpretLineGroupMe(regexMC)
-                        Case "io"
-                            InterpretLineGroupIo(regexMC)
-                        Case "var"
-                            InterpretLineGroupVar(regexMC, lineNo)
-                        Case Else
-                            Throw New Exception(regexMC(0).Result("Uknown group: $1"))
-                    End Select
+                    line = ReplaceVariables(line)
                 End If
-                Return New ScriptEventInfo With {.Sucess = ScriptEventInfo.ScriptEventState.Success}
+                Dim pattern As String = "(\w+)\.(\w+):([^\n;]*);?([^\n;]*);?([^\n;]*);?([^\n;]*);?([^\n;]*)"
+                Dim regexMC As Text.RegularExpressions.MatchCollection = Text.RegularExpressions.Regex.Matches(line, pattern, Text.RegularExpressions.RegexOptions.IgnoreCase)
+                If regexMC.Count = 0 Then
+                    Throw New Exception("Bad line")
+                End If
+                Select Case regexMC(0).Result("$1")
+                    Case "me"
+                        InterpretLineGroupMe(regexMC)
+                    Case "io"
+                        InterpretLineGroupIo(regexMC)
+                    Case "var"
+                        InterpretLineGroupVar(regexMC, lineNo)
+                    Case Else
+                        Throw New Exception(regexMC(0).Result("Uknown group: $1"))
+                End Select
+            End If
+            Return New ScriptEventInfo With {.Sucess = ScriptEventInfo.ScriptEventState.Success}
         Catch ex As Exception
             Return New ScriptEventInfo With {.Sucess = ScriptEventInfo.ScriptEventState.Error, .Error = ex}
         End Try
     End Function
-
-    ''' <summary>
-    ''' Interprets a line in the group "me"
-    ''' </summary>
-    ''' <param name="lineRegEx">Line to interpret as Regex MatchCollection</param>
-    Sub InterpretLineGroupMe(ByVal lineRegEx As Text.RegularExpressions.MatchCollection)
-        Select Case lineRegEx(0).Result("$2")
-            Case "clear"
-                Console.Clear()
-            Case "color"
-                Console.BackgroundColor = CType(lineRegEx(0).Result("$3"), ConsoleColor)
-                Console.ForegroundColor = CType(lineRegEx(0).Result("$4"), ConsoleColor)
-            Case "license"
-                Console.WriteLine("The MIT License (MIT)")
-                Console.WriteLine("")
-                Console.WriteLine("Copyright (c) 2016 Mario Wagenknecht")
-                Console.WriteLine("")
-                Console.WriteLine("Permission is hereby granted, free of charge, to any person obtaining a copy")
-                Console.WriteLine("of this software and associated documentation files (the ""Software""), to deal")
-                Console.WriteLine("in the Software without restriction, including without limitation the rights")
-                Console.WriteLine("to use, copy, modify, merge, publish, distribute, sublicense, and/or sell")
-                Console.WriteLine("copies of the Software, and to permit persons to whom the Software is")
-                Console.WriteLine("furnished to do so, subject to the following conditions:")
-                Console.WriteLine("")
-                Console.WriteLine("The above copyright notice and this permission notice shall be included in all")
-                Console.WriteLine("copies or substantial portions of the Software.")
-                Console.WriteLine("")
-                Console.WriteLine("THE SOFTWARE IS PROVIDED ""As Is"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR")
-                Console.WriteLine("IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,")
-                Console.WriteLine("FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE")
-                Console.WriteLine("AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER")
-                Console.WriteLine("LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,")
-                Console.WriteLine("OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE")
-                Console.WriteLine("SOFTWARE.")
-            Case "pause"
-                Pause()
-            Case "resetcolor"
-                Console.ResetColor()
-            Case "write"
-                Console.WriteLine(lineRegEx(0).Result("$3"))
-            Case "exit"
-                exitScript = True
-            Case Else
-                Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
-        End Select
-    End Sub
 
     ''' <summary>
     ''' Interprets a line in the group "io"
@@ -225,6 +179,52 @@
                     While newProcess.HasExited = False 'Wait for exit
                     End While
                 End If
+            Case Else
+                Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
+        End Select
+    End Sub
+
+    ''' <summary>
+    ''' Interprets a line in the group "me"
+    ''' </summary>
+    ''' <param name="lineRegEx">Line to interpret as Regex MatchCollection</param>
+    Sub InterpretLineGroupMe(ByVal lineRegEx As Text.RegularExpressions.MatchCollection)
+        Select Case lineRegEx(0).Result("$2")
+            Case "clear"
+                Console.Clear()
+            Case "color"
+                Console.BackgroundColor = CType(lineRegEx(0).Result("$3"), ConsoleColor)
+                Console.ForegroundColor = CType(lineRegEx(0).Result("$4"), ConsoleColor)
+            Case "exit"
+                exitScript = True
+            Case "license"
+                Console.WriteLine("The MIT License (MIT)")
+                Console.WriteLine("")
+                Console.WriteLine("Copyright (c) 2016 Mario Wagenknecht")
+                Console.WriteLine("")
+                Console.WriteLine("Permission is hereby granted, free of charge, to any person obtaining a copy")
+                Console.WriteLine("of this software and associated documentation files (the ""Software""), to deal")
+                Console.WriteLine("in the Software without restriction, including without limitation the rights")
+                Console.WriteLine("to use, copy, modify, merge, publish, distribute, sublicense, and/or sell")
+                Console.WriteLine("copies of the Software, and to permit persons to whom the Software is")
+                Console.WriteLine("furnished to do so, subject to the following conditions:")
+                Console.WriteLine("")
+                Console.WriteLine("The above copyright notice and this permission notice shall be included in all")
+                Console.WriteLine("copies or substantial portions of the Software.")
+                Console.WriteLine("")
+                Console.WriteLine("THE SOFTWARE IS PROVIDED ""As Is"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR")
+                Console.WriteLine("IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,")
+                Console.WriteLine("FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE")
+                Console.WriteLine("AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER")
+                Console.WriteLine("LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,")
+                Console.WriteLine("OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE")
+                Console.WriteLine("SOFTWARE.")
+            Case "pause"
+                Pause()
+            Case "resetcolor"
+                Console.ResetColor()
+            Case "write"
+                Console.WriteLine(lineRegEx(0).Result("$3"))
             Case Else
                 Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
         End Select
