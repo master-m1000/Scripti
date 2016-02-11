@@ -208,13 +208,16 @@
     ''' Asks for an Integer
     ''' </summary>
     ''' <param name="question">Text before input</param>
+    ''' <param name="acceptNegative">If negative inputs should be accepted</param>
     ''' <returns>Integer</returns>
-    Function AskInteger(ByVal question As String) As Integer
+    Function AskInteger(ByVal question As String, Optional ByVal acceptNegative As Boolean = True) As Integer
         Dim answer As Integer
         While True
             Console.Write(question & " ")
             If Integer.TryParse(Console.ReadLine(), answer) = True Then
-                Exit While
+                If acceptNegative = True Or answer >= 0 Then
+                    Exit While
+                End If
             End If
         End While
         Return answer
@@ -226,14 +229,12 @@
     ''' <param name="question">Text before input</param>
     ''' <param name="acceptEmpty">If empty Strings should be accepted</param>
     ''' <returns>String</returns>
-    Function AskString(ByVal question As String, ByVal acceptEmpty As Boolean) As String
+    Function AskString(ByVal question As String, Optional ByVal acceptEmpty As Boolean = True) As String
         Dim answer As String = String.Empty
         While True
             Console.Write(question & " ")
             answer = Console.ReadLine()
-            If acceptEmpty = True Then
-                Exit While
-            ElseIf String.IsNullOrEmpty(answer) = False Then
+            If acceptEmpty = True Or String.IsNullOrEmpty(answer) = False Then
                 Exit While
             End If
         End While
