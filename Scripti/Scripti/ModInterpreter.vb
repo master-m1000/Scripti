@@ -1,4 +1,9 @@
 ﻿Module ModInterpreter
+    WithEvents wc As New Net.WebClient
+    Dim downloadProgress As Integer = 0
+    Dim downloadBytesReceived As Long = 0
+    Dim downloadBytesTotal As Long = 0
+    Dim oldDownloadProgressToString As String
 
     ''' <summary>
     ''' Interprets a line
@@ -49,10 +54,12 @@
                     Throw New Exception("Bad line")
                 End If
                 Select Case regexMC(0).Result("$1")
-                    Case "me"
-                        InterpretLineGroupMe(regexMC)
                     Case "io"
                         InterpretLineGroupIo(regexMC)
+                    Case "me"
+                        InterpretLineGroupMe(regexMC)
+                    Case "net"
+                        InterpretLineGroupNet(regexMC)
                     Case "var"
                         InterpretLineGroupVar(regexMC, lineNo)
                     Case Else
@@ -231,6 +238,42 @@
     End Sub
 
     ''' <summary>
+    ''' Interprets a line in the group "net"
+    ''' </summary>
+    ''' <param name="lineRegEx">Line to interpret as Regex MatchCollection</param>
+    Sub InterpretLineGroupNet(ByVal lineRegEx As Text.RegularExpressions.MatchCollection)
+        Select Case lineRegEx(0).Result("$2")
+            Case "get" 'Downloads a file from the web
+                downloadProgress = 0
+                downloadBytesReceived = 0
+                downloadBytesTotal = 0
+                If IO.File.Exists(lineRegEx(0).Result("$4")) = True Then 'If file already exist then ...
+                    If Boolean.TryParse(lineRegEx(0).Result("$5"), New Boolean) = True Then '... check if the script has an advice to overwrite it.
+                        If Boolean.Parse(lineRegEx(0).Result("$5")) = False Then 'If the script says not to overwrite then override (in other case the command will be executed)
+                            Exit Select
+                        End If
+                    Else 'If the script says nothing then ...
+                        If AskYesNo("Overwrite """ & lineRegEx(0).Result("$4") & """ with a copy of """ & lineRegEx(0).Result("$3") & """?", YesNoQuestionDefault.No) = False Then '... ask the user.
+                            Exit Select
+                        End If
+                    End If
+                End If
+                wc.DownloadFileAsync(New Uri(lineRegEx(0).Result("$3")), lineRegEx(0).Result("$4"))
+                While downloadProgress < 100
+                    If Not DownloadProgressToString() = oldDownloadProgressToString Then
+                        Console.CursorLeft = 0
+                        Console.Write(DownloadProgressToString)
+                        oldDownloadProgressToString = DownloadProgressToString()
+                    End If
+                End While
+                Console.CursorLeft = 0
+                Console.Write(DownloadProgressToString)
+            Case Else
+                Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
+        End Select
+    End Sub
+
+    ''' <summary>
     ''' Interprets a line in the group "var"
     ''' </summary>
     ''' <param name="lineRegEx">Line to interpret as Regex MatchCollection</param>
@@ -269,6 +312,88 @@
                 Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
         End Select
     End Sub
+
+    ''' <summary>
+    ''' Refresh the download progress data
+    ''' </summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub wc_DownloadProgressChanged(sender As Object, e As Net.DownloadProgressChangedEventArgs) Handles wc.DownloadProgressChanged
+        downloadProgress = e.ProgressPercentage
+        downloadBytesReceived = e.BytesReceived
+        downloadBytesTotal = e.TotalBytesToReceive
+    End Sub
+
+    Private Enum ByteUnits
+        B
+        kB
+        MB
+        GB
+        TB
+    End Enum
+
+    ''' <summary>
+    ''' Formates a byte into a formated string, e.g "123,40 kB"
+    ''' </summary>
+    ''' <param name="bytes">Count of bytes</param>
+    ''' <returns>Formated String</returns>
+    Private Function BytesToString(bytes As Long) As String
+        Dim resultString As String = ""
+        Dim resultLong As Double = bytes
+        Dim unitString As ByteUnits = ByteUnits.B
+        Dim i As Integer
+        For i = 1 To 4
+            If resultLong >= 1000 Then
+                unitString = CType(i, ByteUnits)
+                resultLong = resultLong / 1000
+            Else
+                Exit For
+            End If
+        Next
+
+        If Math.Round(resultLong, 2).ToString.Contains(",") Then
+            If Math.Round(resultLong, 2).ToString.ToCharArray(Math.Round(resultLong, 2).ToString.Count - 2, 1) = "," Then
+                resultString = Math.Round(resultLong, 2).ToString & "0"
+            ElseIf Math.Round(resultLong, 2).ToString.ToCharArray(Math.Round(resultLong, 2).ToString.Count - 3, 1) = "," Then
+                resultString = Math.Round(resultLong, 2).ToString
+            End If
+        Else
+            resultString = Math.Round(resultLong, 2).ToString & ",00"
+        End If
+        resultString &= " " & unitString.ToString
+        'If Math.Round(resultLong, 2).ToString.Count < 9 And Not unitString = ByteUnits.B Then
+        '    While Math.Round(resultLong, 2).ToString.Count < 9
+        '        resultString = " " & resultString
+        '    End While
+        'Else
+        '    While Math.Round(resultLong, 2).ToString.Count < 8
+        '        resultString = " " & resultString
+        '    End While
+        'End If
+        Return resultString
+    End Function
+
+    ''' <summary>
+    ''' Formats the download progress
+    ''' </summary>
+    ''' <returns>Current formatet progress</returns>
+    Private Function DownloadProgressToString() As String
+        Dim result As String = ""
+        result = BytesToString(downloadBytesReceived)
+        While result.Count < 9
+            result = " " & result
+        End While
+        result &= " / " & BytesToString(downloadBytesTotal) & " ["
+        If downloadProgress.ToString.Count = 1 Then
+            result &= "  " & downloadProgress
+        ElseIf downloadProgress.ToString.Count = 2 Then
+            result &= " " & downloadProgress
+        Else
+            result &= downloadProgress
+        End If
+        result &= "%]"
+        Return result
+    End Function
 
     '''' <summary>
     '''' Interprets a line in the group "template"
