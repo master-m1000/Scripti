@@ -268,6 +268,19 @@
                 End While
                 Console.CursorLeft = 0
                 Console.Write(DownloadProgressToString)
+            Case "ping"
+                Dim ping As New Net.NetworkInformation.Ping
+                Dim reply As Net.NetworkInformation.PingReply
+                If String.IsNullOrEmpty(lineRegEx(0).Result("$4")) = False Then
+                    If Integer.TryParse(lineRegEx(0).Result("$4"), New Integer) = True Then
+                        reply = ping.Send(lineRegEx(0).Result("$3"), Integer.Parse(lineRegEx(0).Result("$4")))
+                    Else
+                        Throw New Exception(Integer.Parse(lineRegEx(0).Result("$4")) & " is not a valide Integer")
+                    End If
+                Else
+                    reply = ping.Send(lineRegEx(0).Result("$3"), 6000)
+                End If
+                Console.WriteLine(reply.Address.ToString & ": Bytes=" & reply.Buffer.Count & " Time=" & reply.RoundtripTime.ToString & " Status=" & reply.Status.ToString)
             Case Else
                 Throw New Exception(lineRegEx(0).Result("Uknown command: $2"))
         End Select
